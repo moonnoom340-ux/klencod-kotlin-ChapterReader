@@ -9,6 +9,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
     private var pendingCallback: ValueCallback<Array<Uri>>? = null
+    private var lastBack = 0L
 
     private val picker =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -67,7 +69,23 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (web.canGoBack()) web.goBack() else finish()
+                web.evaluateJavascript(
+                    "(function(){return window.goBack?window.goBack():false})()"
+                ) { result ->
+                    if (result != "true") {
+                        val now = System.currentTimeMillis()
+                        if (now - lastBack < 2000) {
+                            finish()
+                        } else {
+                            lastBack = now
+                            Toast.makeText(
+                                this@MainActivity,
+                                "اضغط مرة أخرى للخروج",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
             }
         })
 

@@ -124,6 +124,15 @@ el("goSet").onclick=function(){showView("setview")};
 el("back1").onclick=el("back2").onclick=function(){showView("start");refresh()};
 el("again").addEventListener("click",function(){saveNow();cur=null;setTimeout(refresh,400)},true);
 
+/* ---- phone back button ---- */
+window.goBack=function(){
+  var tp=document.getElementById("tp");
+  if(tp&&tp.classList.contains("on")){tp.classList.remove("on");return true}
+  if(el("reader").style.display==="block"){el("again").click();return true}
+  if(el("libview").style.display==="block"||el("setview").style.display==="block"){showView("start");refresh();return true}
+  return false;
+};
+
 /* ---- saving a newly picked book ---- */
 el("file").addEventListener("change",function(e){
   var f=e.target.files[0];if(!f||!DB)return;
