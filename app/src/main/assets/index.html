@@ -116,7 +116,11 @@ function track(){
   var secs=document.querySelectorAll(".ch"),chips=document.querySelectorAll(".chip"),act=0;
   secs.forEach(function(s,i){if(s.getBoundingClientRect().top<=140)act=i});
   chips.forEach(function(c,i){c.classList.toggle("on",i===act)});
-  if(chips[act]&&chips[act].scrollIntoView)chips[act].scrollIntoView({inline:"center",block:"nearest"});
+  if(chips[act]&&act!==window.lastAct){
+    window.lastAct=act;
+    var bx=el("chips"),cr=chips[act].getBoundingClientRect(),br=bx.getBoundingClientRect();
+    bx.scrollBy({left:(cr.left+cr.width/2)-(br.left+br.width/2)});
+  }
   var m=document.documentElement.scrollHeight-innerHeight;
   el("bar").style.width=(m>0?Math.min(100,scrollY/m*100):0)+"%";
 }
