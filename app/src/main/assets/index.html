@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>قارئ الفصول الملوّن</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--ink:#1d2433;--paper:#fbfcfe;--muted:#5d6678;--bar:#ffffffee;--line:#d9deea;--fs:19px;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e8ecf5;--paper:#12151c;--muted:#9aa3b8;--bar:#12151cee;--line:#2a3040;color-scheme:dark}}
+:root[data-theme="dark"]{--ink:#e8ecf5;--paper:#12151c;--muted:#9aa3b8;--bar:#12151cee;--line:#2a3040;color-scheme:dark}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Naskh Arabic","Segoe UI",Tahoma,system-ui,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--paper);z-index:10}
+.start{max-width:520px;margin:12vh auto 0;padding:24px;text-align:center}
+.start h1{font-size:30px;margin:0 0 10px}
+.start p{color:var(--muted);line-height:1.8;margin:0 0 24px}
+.drop{display:block;border:2px dashed var(--line);border-radius:14px;padding:36px 16px;cursor:pointer;font-size:18px}
+.drop:hover,.drop:focus-within{border-color:var(--ink)}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.err{color:#c0392b;margin-top:16px;min-height:1.5em}
+#reader{display:none}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bar);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:8px 12px}
+.row{display:flex;gap:8px;align-items:center}
+.row .t{flex:1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{font:inherit;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:4px 12px;cursor:pointer}
+button:focus-visible,.chip:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
+.chip{flex:none;border:0;border-radius:999px;padding:4px 12px;font-size:14px;color:#fff;background:hsl(var(--h) 55% 42%)}
+.chip.on{outline:2px solid var(--ink);outline-offset:2px}
+.prog{height:3px;background:var(--line);margin-top:6px;border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--ink)}
+.ch{background:hsl(var(--h) 60% 95%);border-inline-start:8px solid hsl(var(--h) 55% 45%);padding:28px 18px 36px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ch{background:hsl(var(--h) 28% 17%)}}
+:root[data-theme="dark"] .ch{background:hsl(var(--h) 28% 17%)}
+.in{max-width:44rem;margin:0 auto;font-size:var(--fs);line-height:2}
+.in p{margin:0 0 .9em;white-space:pre-wrap}
+.in h1,.in h2,.in h3{line-height:1.5}
+.ct{font-weight:700;font-size:1.35em;margin:0 0 1em;padding-bottom:.4em;border-bottom:2px solid hsl(var(--h) 55% 45%)}
+.in img{max-width:100%}
+.in table{display:block;overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="start" id="start">
+  <h1>قارئ الفصول الملوّن</h1>
+  <p>ارفع كتاباً بصيغة Word أو PDF أو txt، فيلوّن التطبيق كل فصل بلون مختلف دون أي تغيير في النص.</p>
+  <label class="drop"><input type="file" id="file" accept=".docx,.pdf,.txt,.md,text/plain,application/pdf">اختر ملف الكتاب</label>
+  <div class="err" id="err" role="alert"></div>
+</div>
+<div id="reader">
+  <header>
+    <div class="row"><span class="t" id="title"></span>
+      <button id="smaller" aria-label="تصغير الخط">أ−</button>
+      <button id="bigger" aria-label="تكبير الخط">أ+</button>
+      <button id="again">كتاب آخر</button></div>
+    <div class="chips" id="chips"></div>
+    <div class="prog"><i id="bar"></i></div>
+  </header>
+  <main id="book"></main>
+</div>
+<script>
+var HUES=[210,150,28,330,270,175,48,0,120,300];
+var RX=/^\s*(الفصل|الباب|القسم|المقدمة|الخاتمة|chapter|part|section|prologue|epilogue)(\s|$|:|-)/i;
+var el=function(id){return document.getElementById(id)};
+var fs=19;
+
+function isTitle(txt){txt=txt.trim();return txt.length>0&&txt.length<80&&RX.test(txt)}
+
+function fromText(s){
+  var out=[];
+  s.replace(/\r\n?/g,"\n").split("\n").forEach(function(line){
+    if(!line.trim())return;
+    var p=document.createElement("p");p.textContent=line;p.dir="auto";
+    out.push({node:p,title:isTitle(line)});
+  });
+  return out;
+}
+function fromHtml(h){
+  var box=document.createElement("div");box.innerHTML=h;
+  var out=[];
+  Array.prototype.forEach.call(box.children,function(n){
+    var t=n.textContent||"";
+    n.dir="auto";
+    out.push({node:n,title:/^H[1-2]$/.test(n.tagName)||isTitle(t)});
+  });
+  return out;
+}
+function render(items,name){
+  var book=el("book"),chips=el("chips");book.innerHTML="";chips.innerHTML="";
+  var chapters=[],cur=null;
+  items.forEach(function(it){
+    if(it.title||!cur){cur={title:it.title?it.node.textContent.trim():"البداية",nodes:[],titled:it.title};chapters.push(cur)}
+    cur.nodes.push(it);
+  });
+  if(chapters.length>1&&!chapters[0].titled&&chapters[0].nodes.length<3){var f=chapters.shift();chapters[0].nodes=f.nodes.concat(chapters[0].nodes)}
+  chapters.forEach(function(c,i){
+    var h=HUES[i%HUES.length];
+    var s=document.createElement("section");s.className="ch";s.id="c"+i;s.style.setProperty("--h",h);
+    var inner=document.createElement("div");inner.className="in";
+    c.nodes.forEach(function(it){inner.appendChild(it.node)});
+    s.appendChild(inner);book.appendChild(s);
+    var b=document.createElement("button");b.className="chip";b.style.setProperty("--h",h);
+    b.textContent=(i+1)+". "+(c.title.length>22?c.title.slice(0,22)+"…":c.title);
+    b.onclick=function(){s.scrollIntoView({behavior:"smooth"})};
+    chips.appendChild(b);
+  });
+  el("title").textContent=name;
+  el("start").style.display="none";el("reader").style.display="block";
+  window.scrollTo(0,0);track();
+}
+function track(){
+  var secs=document.querySelectorAll(".ch"),chips=document.querySelectorAll(".chip"),act=0;
+  secs.forEach(function(s,i){if(s.getBoundingClientRect().top<=140)act=i});
+  chips.forEach(function(c,i){c.classList.toggle("on",i===act)});
+  if(chips[act]&&chips[act].scrollIntoView)chips[act].scrollIntoView({inline:"center",block:"nearest"});
+  var m=document.documentElement.scrollHeight-innerHeight;
+  el("bar").style.width=(m>0?Math.min(100,scrollY/m*100):0)+"%";
+}
+var pend=false;
+addEventListener("scroll",function(){if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;if(el("reader").style.display==="block")track()})});
+
+el("file").onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  el("err").textContent="";
+  var n=f.name.replace(/\.[^.]+$/,""),ext=(f.name.split(".").pop()||"").toLowerCase();
+  if(ext==="docx"){
+    if(!window.mammoth){el("err").textContent="تعذّر تحميل قارئ Word. تحقق من الاتصال وأعد المحاولة.";return}
+    f.arrayBuffer().then(function(b){return mammoth.convertToHtml({arrayBuffer:b})})
+     .then(function(r){render(fromHtml(r.value),n)})
+     .catch(function(){el("err").textContent="تعذّر قراءة ملف Word هذا."});
+  }else if(ext==="txt"||ext==="md"){
+    f.text().then(function(t){render(fromText(t),n)});
+  }else if(ext==="pdf"){
+    window.openPdf(f,n);
+  }else{el("err").textContent="هذه الصيغة غير مدعومة بعد."}
+};
+function setFs(d){fs=Math.max(14,Math.min(34,fs+d));document.documentElement.style.setProperty("--fs",fs+"px")}
+el("bigger").onclick=function(){setFs(2)};el("smaller").onclick=function(){setFs(-2)};
+el("again").onclick=function(){el("reader").style.display="none";el("start").style.display="block";el("file").value=""};
+</script>
+<script src="extra.js"></script>
+</body>
+</html>
