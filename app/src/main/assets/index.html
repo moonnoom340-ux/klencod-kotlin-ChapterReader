@@ -127,8 +127,7 @@ function track(){
 var pend=false;
 addEventListener("scroll",function(){if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;if(el("reader").style.display==="block")track()})});
 
-el("file").onchange=function(e){
-  var f=e.target.files[0];if(!f)return;
+function openBook(f){
   el("err").textContent="";
   var n=f.name.replace(/\.[^.]+$/,""),ext=(f.name.split(".").pop()||"").toLowerCase();
   if(ext==="docx"){
@@ -141,11 +140,13 @@ el("file").onchange=function(e){
   }else if(ext==="pdf"){
     window.openPdf(f,n);
   }else{el("err").textContent="هذه الصيغة غير مدعومة بعد."}
-};
+}
+el("file").onchange=function(e){var f=e.target.files[0];if(f)openBook(f)};
 function setFs(d){fs=Math.max(14,Math.min(34,fs+d));document.documentElement.style.setProperty("--fs",fs+"px")}
 el("bigger").onclick=function(){setFs(2)};el("smaller").onclick=function(){setFs(-2)};
 el("again").onclick=function(){el("reader").style.display="none";el("start").style.display="block";el("file").value=""};
 </script>
 <script src="extra.js"></script>
+<script src="lib.js"></script>
 </body>
 </html>

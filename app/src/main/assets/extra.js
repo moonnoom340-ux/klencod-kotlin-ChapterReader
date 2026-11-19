@@ -29,7 +29,7 @@ window.openPdf=function(f,name){
   if(!window.pdfjsLib){el("err").textContent="ملفات مكتبة PDF غير موجودة في مجلد assets.";return}
   pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
   el("err").textContent="جارٍ قراءة الملف…";
-  f.arrayBuffer().then(function(b){return pdfjsLib.getDocument({data:b}).promise}).then(function(doc){
+  f.arrayBuffer().then(function(b){return pdfjsLib.getDocument({data:b,disableFontFace:true,cMapUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/",cMapPacked:true,standardFontDataUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/"}).promise}).then(function(doc){
     var jobs=[];
     for(var i=1;i<=doc.numPages;i++)jobs.push(doc.getPage(i).then(function(p){return p.getTextContent().then(function(tc){return{p:p,x:paras(tc)}})}));
     return Promise.all(jobs);
@@ -38,7 +38,7 @@ window.openPdf=function(f,name){
 };
 function paint(d){
   var p=d.p,v0=p.getViewport({scale:1}),w=Math.min(d.clientWidth||600,900),
-  v=p.getViewport({scale:w/v0.width*(window.devicePixelRatio||1)}),c=document.createElement("canvas");
+  v=p.getViewport({scale:Math.min(w/v0.width*(window.devicePixelRatio||1),2000/v0.width)}),c=document.createElement("canvas");
   c.width=v.width;c.height=v.height;d.insertBefore(c,d.firstChild);
   p.render({canvasContext:c.getContext("2d"),viewport:v});
 }
