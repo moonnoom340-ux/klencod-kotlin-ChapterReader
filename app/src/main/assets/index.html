@@ -74,6 +74,7 @@ button:focus-visible,.chip:focus-visible{outline:2px solid var(--ink);outline-of
 .in img{max-width:100%}
 .in table{display:block;overflow-x:auto}
 </style>
+<link rel="stylesheet" href="ui.css">
 </head>
 <body>
 <div class="home" id="start">
@@ -92,31 +93,29 @@ button:focus-visible,.chip:focus-visible{outline:2px solid var(--ink);outline-of
   <div class="err" id="err" role="alert"></div>
   <div id="hero"></div>
   <div class="grid">
-    <label class="act big"><input type="file" id="file" accept=".docx,.pdf,.txt,.md,text/plain,application/pdf"><span class="ic">＋</span><span><b>كتاب جديد</b><br><small>Word · PDF · TXT</small></span></label>
-    <button class="act" id="goLib"><span class="ic">📚</span><b>كتبي</b><small id="libCount"></small></button>
-    <button class="act" id="goSet"><span class="ic">⚙️</span><b>الإعدادات</b><small>المظهر والخط</small></button>
+    <label class="act big"><input type="file" id="file" accept=".docx,.pdf,.txt,.md,text/plain,application/pdf"><span class="tile"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="tx"><b>كتاب جديد</b><small>Word · PDF · TXT</small></span><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></label>
+    <button class="act" id="goLib"><span class="tile t2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="4.500" height="16" rx="1.200"/><rect x="10" y="4" width="4.500" height="16" rx="1.200"/><path d="M16.500 6.500l3.800-1 3 0"/><path d="M17 5.500l3.200 14 -3.300.8"/></svg></span><b>كتبي</b><small id="libCount"></small></button>
+    <button class="act" id="goSet"><span class="tile t3"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.200"/><circle cx="9" cy="17" r="2.200"/></svg></span><b>الإعدادات</b><small>المظهر والخط</small></button>
   </div>
   <div id="recent"></div>
 </div>
 <div class="view" id="libview">
-  <div class="top"><button id="back1">→ الرئيسية</button><h2>كتبي</h2></div>
+  <div class="top"><button class="ib" id="back1" aria-label="رجوع"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><h2>كتبي</h2></div>
   <div id="liblist"></div>
 </div>
 <div class="view" id="setview">
-  <div class="top"><button id="back2">→ الرئيسية</button><h2>الإعدادات</h2></div>
+  <div class="top"><button class="ib" id="back2" aria-label="رجوع"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><h2>الإعدادات</h2></div>
   <div class="card">
     <div class="row2"><span>المظهر</span><span class="sg" id="thm"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button></span></div>
-    <div class="row2"><span>حجم الخط</span><input type="range" id="fsr" min="14" max="34" step="1"></div>
+    <div class="row2"><span>حجم الخط</span><input type="range" id="fsr" min="14" max="44" step="1"></div>
     <div class="row2"><label for="auto">فتح آخر كتاب عند التشغيل</label><input type="checkbox" id="auto"></div>
   </div>
+  <p class="muted">للتكبير والتصغير أثناء القراءة: ضع إصبعين على الشاشة وقرّبهما أو باعدهما.</p>
   <p class="muted">قارئ الفصول · كل فصل بلون</p>
 </div>
 <div id="reader">
   <header>
-    <div class="row"><span class="t" id="title"></span>
-      <button id="smaller" aria-label="تصغير الخط">أ−</button>
-      <button id="bigger" aria-label="تكبير الخط">أ+</button>
-      <button id="again">الرئيسية</button></div>
+    <div class="row"><button class="ib" id="again" aria-label="الرئيسية"><svg viewBox="0 0 24 24"><path d="M3.5 11.5 12 4l8.5 7.5M5.5 10v9.5h13V10"/></svg></button><span class="t" id="title"></span></div>
     <div class="chips" id="chips"></div>
     <div class="prog"><i id="bar"></i></div>
   </header>
@@ -129,7 +128,7 @@ var PLAIN=/^\s*(الفهرس|فهرس|المراجع|المصادر|قائمة �
 var el=function(id){return document.getElementById(id)};
 var fs=19;
 var VIEWS=["start","libview","setview","reader"];
-function showView(n){VIEWS.forEach(function(v){el(v).style.display=v===n?"block":"none"});window.scrollTo(0,0)}
+function showView(n){VIEWS.forEach(function(v){el(v).style.display=v===n?"block":"none"});window.scrollTo(0,0);if(n!=="reader"&&window.closeAllPanels)window.closeAllPanels()}
 function hueOf(i){return Math.round((210+i*137.508)%360)}
 function kindOf(t){t=(t||"").trim();if(!t||t.length>=80)return null;if(/\.{3,}|…|·{3,}/.test(t))return null;if(PLAIN.test(t))return"plain";if(CH.test(t)&&!EXC.test(t))return"ch";return null}
 
@@ -205,11 +204,11 @@ function openBook(f){
 }
 el("file").onchange=function(e){var f=e.target.files[0];if(f)openBook(f)};
 function setFs(d){fs=Math.max(14,Math.min(34,fs+d));document.documentElement.style.setProperty("--fs",fs+"px")}
-el("bigger").onclick=function(){setFs(2)};el("smaller").onclick=function(){setFs(-2)};
 el("again").onclick=function(){showView("start");el("file").value=""};
 </script>
 <script src="extra.js"></script>
 <script src="split.js"></script>
+<script src="zoom.js"></script>
 <script src="lib.js"></script>
 </body>
 </html>

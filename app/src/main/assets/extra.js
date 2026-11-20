@@ -60,10 +60,10 @@ window.openPdf=function(f,name){
   .catch(function(){el("err").textContent="تعذّر قراءة ملف PDF هذا."});
 };
 function paint(d){
-  var p=d.p,v0=p.getViewport({scale:1}),w=Math.min(d.clientWidth||600,900),
+  var p=d.p,v0=p.getViewport({scale:1}),w=Math.min(d.clientWidth||600,1600),
   v=p.getViewport({scale:Math.min(w/v0.width*(window.devicePixelRatio||1),2000/v0.width)}),c=document.createElement("canvas");
-  c.width=v.width;c.height=v.height;d.insertBefore(c,d.firstChild);
-  p.render({canvasContext:c.getContext("2d"),viewport:v});
+  c.width=v.width;c.height=v.height;
+  p.render({canvasContext:c.getContext("2d"),viewport:v}).promise.then(function(){var o=d.querySelector("canvas");if(o)o.remove();d.insertBefore(c,d.firstChild)});
 }
 window.paintPage=paint;
 async function outlineOf(doc){
@@ -169,8 +169,8 @@ async function trSec(sec,lang,key,say){
 var showTr=true;
 function activeIdx(){var c=document.querySelectorAll(".chip"),k=0;c.forEach(function(x,i){if(x.classList.contains("on"))k=i});return k}
 function build(){
-  var p=document.createElement("div");p.id="tp";
-  p.innerHTML='<div class="g"><select id="tl"></select><input id="tk" type="password" placeholder="مفتاح Anthropic API" autocomplete="off"></div>'+
+  var p=document.createElement("div");p.id="tp";p.className="sheet";
+  p.innerHTML='<div class="grip"></div><div class="sh-head"><h3>ترجمة الكتاب</h3></div><div class="g"><select id="tl"></select><input id="tk" type="password" placeholder="مفتاح Anthropic API" autocomplete="off"></div>'+
   '<div class="g"><button id="t1">ترجمة الفصل الحالي</button><button id="t2">ترجمة الكتاب كله</button><button id="t3">الأصل / الترجمة</button><button id="t4">إغلاق</button></div><div id="ts"></div>';
   document.body.appendChild(p);
   var sel=p.querySelector("#tl");
@@ -199,9 +199,10 @@ function build(){
     document.querySelectorAll("[data-tr]").forEach(function(n){n.textContent=showTr?n.dataset.tr:n.dataset.o});
   };
   p.querySelector("#t4").onclick=function(){p.classList.remove("on")};
-  var b=document.createElement("button");b.textContent="ترجمة";
+  var b=document.createElement("button");b.className="ib";b.setAttribute("aria-label","ترجمة");
+  b.innerHTML='<svg viewBox="0 0 24 24"><path d="M4 5h9M8.500 3v2M6 5c.5 4 3 7 6 8.500M12 5c-.5 4-3.500 7.500-7 9.500M13 20l4-9 4 9M14.500 17h5"/></svg>';
   b.onclick=function(){p.classList.toggle("on")};
-  document.querySelector(".row").insertBefore(b,el("again"));
+  document.querySelector(".row").appendChild(b);
 }
 build();
 })();

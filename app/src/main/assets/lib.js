@@ -115,7 +115,7 @@ function theme(v){
 }
 var tv=ls("theme")||"auto";theme(tv);
 document.querySelectorAll("#thm button").forEach(function(b){b.onclick=function(){theme(b.dataset.v);ls("theme",b.dataset.v)}});
-var f0=+ls("fs");if(f0>=14&&f0<=34){window.fs=f0;document.documentElement.style.setProperty("--fs",f0+"px")}
+var f0=+ls("fs");if(f0>=14&&f0<=44){window.fs=f0;document.documentElement.style.setProperty("--fs",f0+"px")}
 var fr=el("fsr");fr.value=window.fs;
 fr.oninput=function(){window.fs=+fr.value;document.documentElement.style.setProperty("--fs",fr.value+"px");ls("fs",fr.value)};
 var au=el("auto");au.checked=ls("auto")==="1";au.onchange=function(){ls("auto",au.checked?"1":"0")};

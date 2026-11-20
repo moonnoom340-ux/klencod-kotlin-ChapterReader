@@ -4,10 +4,6 @@ var PLAIN2=/^\s*(المقدمة|مقدمة|تمهيد|الإهداء|إهداء|
 var LABEL={outline:"من فهرس الكتاب المدمج",A:"من عناوين الفصول",B:"من عناوين موسّعة (كتاب، مبحث، درس…)",C:"من شكل العناوين",Aloose:"من أوائل الصفحات",fallback:"تقسيم متساوٍ (لم تُوجد عناوين)"};
 var B=null,mark=false;
 
-var css=document.createElement("style");
-css.textContent="#sp{position:fixed;inset:auto 0 0 0;z-index:20;background:var(--paper);color:var(--ink);border-top:1px solid var(--line);padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));display:none}#sp.on{display:block}#sp .g{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}#sp .g button{flex:1}#sp .g button.on{background:var(--ink);color:var(--paper)}#sp input{font:inherit;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);width:90px}#ss{margin-top:10px;color:var(--muted);line-height:1.6;font-size:14px}"+
-".mk{outline:2px dashed var(--ink);outline-offset:-2px}.mkon .in>*,.mkon .pg{cursor:pointer}#mkbar{position:fixed;inset:auto 12px calc(12px + env(safe-area-inset-bottom,0px)) 12px;z-index:21;background:var(--ink);color:var(--paper);border-radius:14px;padding:10px 14px;display:none;align-items:center;gap:10px}#mkbar.on{display:flex}#mkbar span{flex:1;font-size:14px;line-height:1.5}#mkbar button{background:var(--paper);color:var(--ink)}.row button{padding:4px 8px;font-size:14px}";
-document.head.appendChild(css);
 
 /* ---------- headings ---------- */
 function pdfHead(x,body,tier){
@@ -190,37 +186,81 @@ window.loadBook=function(spec){
 window.__SplitTest=function(b){B=b;return compute()};
 
 /* ---------- panel ---------- */
-var P=document.createElement("div");P.id="sp";
-P.innerHTML='<div class="g" id="sm"><button data-m="auto">تلقائي</button><button data-m="pages">كل N صفحة</button><button data-m="days">بالأيام</button><button data-m="manual">يدوي</button></div>'+
-'<div class="g" id="sn" style="display:none"><span id="sl"></span><input id="sv" type="number" min="1" max="999"><button id="sa">تطبيق</button></div>'+
-'<div class="g"><button id="sk">تعليم أقسام بيدي</button><button id="sc">مسح العلامات</button><button id="sx">إغلاق</button></div><div id="ss"></div>';
+var ICON={
+  auto:'<svg viewBox="0 0 24 24"><path d="M11 3l1.800 4.700L17.500 9.500l-4.700 1.800L11 16l-1.800-4.700L4.500 9.500l4.700-1.800z"/><path d="M18 14l.8 2.200L21 17l-2.200.8L18 20l-.8-2.200L15 17l2.200-.8z"/></svg>',
+  pages:'<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.500"/><path d="M9 8h6M9 12h6M9 16h3.500"/></svg>',
+  days:'<svg viewBox="0 0 24 24"><rect x="3.500" y="5" width="17" height="15" rx="3.500"/><path d="M8 3v4M16 3v4M3.500 10h17"/></svg>',
+  manual:'<svg viewBox="0 0 24 24"><path d="M12 21s-6-5.300-6-10a6 6 0 0 1 12 0c0 4.700-6 10-6 10z"/><circle cx="12" cy="11" r="2.200"/></svg>'
+};
+var P=document.createElement("div");P.id="sp";P.className="sheet";
+P.setAttribute("role","dialog");P.setAttribute("aria-label","تقسيم الكتاب");
+P.innerHTML='<div class="grip"></div><div class="sh-head"><h3>تقسيم الكتاب</h3><button class="ib" id="sx" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'+
+'<div class="seg4" id="sm">'+[["auto","تلقائي"],["pages","بالصفحات"],["days","بالأيام"],["manual","يدوي"]].map(function(m){return '<button data-m="'+m[0]+'">'+ICON[m[0]]+'<span>'+m[1]+'</span></button>'}).join("")+'</div>'+
+'<div class="stp" id="sn"><span class="lb" id="sl"></span><button class="ib" id="smn" aria-label="أقل">−</button><b id="sv">10</b><button class="ib" id="spl" aria-label="أكثر">+</button></div>'+
+'<div class="pre-chips" id="sq"></div>'+
+'<div class="rowcard"><div class="tx"><b>تعليم الأقسام بيدك</b><small>اضغط الفقرة أو الصفحة التي يبدأ منها قسم جديد</small></div><button id="sk">ابدأ</button></div>'+
+'<div class="pv" id="spv"></div><div class="sum" id="ss"></div>'+
+'<div class="foot"><button id="sc">مسح العلامات</button></div>';
 document.body.appendChild(P);
+var BD=document.createElement("div");BD.id="bd";document.body.appendChild(BD);
 var MK=document.createElement("div");MK.id="mkbar";
-MK.innerHTML='<span>وضع التعليم: اضغط الفقرة (أو الصفحة) التي يبدأ منها قسم جديد، واضغطها مرة ثانية لإزالة العلامة.</span><button id="mke">إنهاء</button>';
+MK.style.cssText="position:fixed;inset:auto 12px calc(12px + env(safe-area-inset-bottom,0px)) 12px;z-index:21;background:var(--ink);color:var(--paper);padding:12px 14px;display:none;align-items:center;gap:10px";
+MK.innerHTML='<span style="flex:1;font-size:14px;line-height:1.6">وضع التعليم: اضغط الفقرة (أو الصفحة) التي يبدأ منها قسم جديد، واضغطها ثانية لإزالة العلامة.</span><button id="mke">تم</button>';
 document.body.appendChild(MK);
+function tpEl(){return document.getElementById("tp")}
+function syncBd(){var t=tpEl();BD.classList.toggle("on",!!(P.classList.contains("on")||(t&&t.classList.contains("on"))))}
+if(typeof MutationObserver!=="undefined"){
+  var mo=new MutationObserver(syncBd);
+  mo.observe(P,{attributes:true,attributeFilter:["class"]});
+  if(tpEl())mo.observe(tpEl(),{attributes:true,attributeFilter:["class"]});
+}
+BD.onclick=function(){window.closeAllPanels()};
+
 function status(){
   if(!B)return;
+  var pv=el("spv");pv.innerHTML="";
+  var ci=0,tot=B.totalWt;
+  B.bounds.forEach(function(b,i){
+    var e=i+1<B.bounds.length?B.bounds[i+1].s:B.n,w=0,k;
+    for(k=b.s;k<e;k++)w+=B.wt[k];
+    var d=document.createElement("i");
+    d.style.flex=Math.max(w,tot*0.004)+" 1 0";
+    d.style.background=b.colored?"hsl("+hueOf(ci++)+" 70% 52%)":"var(--line)";
+    pv.appendChild(d);
+  });
   el("ss").textContent=B.colored+" قسماً ملوّناً · "+B.how+(B.split.marks.length?" · "+B.split.marks.length+" علامة يدوية":"");
 }
+var PRE={pages:[5,10,20,30],days:[7,15,30,60,90]};
 function syncPanel(){
   var m=B.split.mode;
   document.querySelectorAll("#sm button").forEach(function(b){b.classList.toggle("on",b.dataset.m===m)});
-  var sn=el("sn");
-  if(m==="pages"||m==="days"){
-    sn.style.display="flex";el("sl").textContent=m==="pages"?"عدد الصفحات في كل قسم":"عدد الأيام";
-    el("sv").value=m==="pages"?B.split.pn:B.split.dn;
-  }else sn.style.display="none";
+  var on=m==="pages"||m==="days";
+  el("sn").classList.toggle("on",on);
+  var q=el("sq");q.innerHTML="";
+  if(on){
+    var key=m==="pages"?"pn":"dn",val=B.split[key];
+    el("sl").textContent=m==="pages"?"عدد الصفحات في كل قسم":"أنهي الكتاب في (يوم)";
+    el("sv").textContent=val;
+    PRE[m].forEach(function(n){
+      var b=document.createElement("button");b.textContent=n;if(n===val)b.className="on";
+      b.onclick=function(){B.split[key]=n;syncPanel();recompute(true)};q.appendChild(b);
+    });
+  }
 }
 function setMark(on){
-  mark=on;document.body.classList.toggle("mkon",on);MK.classList.toggle("on",on);
+  mark=on;document.body.classList.toggle("mkon",on);MK.style.display=on?"flex":"none";
   if(on)P.classList.remove("on");
 }
 document.querySelectorAll("#sm button").forEach(function(b){b.onclick=function(){B.split.mode=b.dataset.m;syncPanel();recompute(true)}});
-el("sa").onclick=function(){
-  var v=Math.max(1,Math.min(999,parseInt(el("sv").value,10)||1));
-  if(B.split.mode==="pages")B.split.pn=v;else B.split.dn=v;
-  recompute(true);
-};
+var tmr2=null;
+function bump(d){
+  var m=B.split.mode;if(m!=="pages"&&m!=="days")return;
+  var k=m==="pages"?"pn":"dn",max=m==="pages"?200:365;
+  B.split[k]=Math.max(1,Math.min(max,B.split[k]+d));
+  syncPanel();clearTimeout(tmr2);tmr2=setTimeout(function(){recompute(true)},250);
+}
+el("smn").onclick=function(){bump(-1)};
+el("spl").onclick=function(){bump(1)};
 el("sk").onclick=function(){setMark(true)};
 el("mke").onclick=function(){setMark(false);P.classList.add("on")};
 el("sc").onclick=function(){B.split.marks=[];recompute(true)};
@@ -234,12 +274,17 @@ document.addEventListener("click",function(e){
   if(i>=0)m.splice(i,1);else if(u>0)m.push(u);
   recompute(true);
 },true);
-var btn=document.createElement("button");btn.textContent="التقسيم";
+var btn=document.createElement("button");btn.className="ib";btn.setAttribute("aria-label","تقسيم الكتاب");
+btn.innerHTML='<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="2"/><rect x="3" y="10" width="12" height="4" rx="2"/><rect x="3" y="16" width="15" height="4" rx="2"/></svg>';
 btn.onclick=function(){if(B){syncPanel();status();P.classList.toggle("on")}};
-document.querySelector(".row").insertBefore(btn,el("again"));
+document.querySelector(".row").appendChild(btn);
+window.closeAllPanels=function(){
+  P.classList.remove("on");var t=tpEl();if(t)t.classList.remove("on");setMark(false);
+};
 window.closeSplit=function(){
+  var t=tpEl();
   if(mark){setMark(false);return true}
-  if(P.classList.contains("on")){P.classList.remove("on");return true}
+  if(P.classList.contains("on")||(t&&t.classList.contains("on"))){window.closeAllPanels();return true}
   return false;
 };
 })();
