@@ -79,3 +79,6 @@ input[type=range]{accent-color:hsl(265 70% 60%)}
 #zi.on{opacity:1}
 .ch,.pre{overflow-x:auto}
 .ch .pg,.pre .pg{max-width:none;width:calc(min(100vw - 36px,46rem)*var(--pz,1));margin-inline:auto}
+
+.sheet,#tp.sheet{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#bd{touch-action:none}

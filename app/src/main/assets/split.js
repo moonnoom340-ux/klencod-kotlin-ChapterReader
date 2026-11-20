@@ -278,6 +278,15 @@ var btn=document.createElement("button");btn.className="ib";btn.setAttribute("ar
 btn.innerHTML='<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="2"/><rect x="3" y="10" width="12" height="4" rx="2"/><rect x="3" y="16" width="15" height="4" rx="2"/></svg>';
 btn.onclick=function(){if(B){syncPanel();status();P.classList.toggle("on")}};
 document.querySelector(".row").appendChild(btn);
+/* while a sheet is open the book behind must not scroll */
+function sheetOpen(){var t=tpEl();return P.classList.contains("on")||!!(t&&t.classList.contains("on"))}
+document.addEventListener("touchmove",function(e){
+  if(!sheetOpen())return;
+  var sh=e.target.closest&&e.target.closest(".sheet");
+  if(sh&&e.touches.length===1&&sh.scrollHeight>sh.clientHeight+1)return;
+  if(e.cancelable)e.preventDefault();
+},{passive:false});
+window.sheetOpen=sheetOpen;
 window.closeAllPanels=function(){
   P.classList.remove("on");var t=tpEl();if(t)t.classList.remove("on");setMark(false);
 };

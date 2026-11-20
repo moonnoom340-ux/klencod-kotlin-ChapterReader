@@ -40,7 +40,7 @@ function finish(){
   clearTimeout(hideT);hideT=setTimeout(function(){tag.style.display="none"},700);
 }
 document.addEventListener("touchstart",function(e){
-  if(e.touches.length===2&&document.getElementById("reader").style.display==="block"){
+  if(e.touches.length===2&&document.getElementById("reader").style.display==="block"&&!(window.sheetOpen&&window.sheetOpen())){
     on=true;d0=dist(e.touches)||1;fs0=window.fs||19;pz0=pz;
     anc=anchorEl();top0=anc?anc.getBoundingClientRect().top:0;
   }
