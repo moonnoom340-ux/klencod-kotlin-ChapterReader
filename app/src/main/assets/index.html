@@ -138,7 +138,7 @@ function fromText(s){
   s.replace(/\r\n?/g,"\n").split("\n").forEach(function(line){
     if(!line.trim())return;
     var p=document.createElement("p");p.textContent=line;p.dir="auto";
-    out.push({node:p,kind:kindOf(line)});
+    out.push({node:p,kind:kindOf(line),txt:true});
   });
   return out;
 }
@@ -173,26 +173,7 @@ function trimToc(secs){
   secs.forEach(function(s){var l=out[out.length-1];if(l&&!l.colored&&!s.colored)l.nodes=l.nodes.concat(s.nodes);else out.push(s)});
   return out;
 }
-function render(items,name){
-  var book=el("book"),chips=el("chips");book.innerHTML="";chips.innerHTML="";window.lastAct=-1;
-  var secs=trimToc(plan(items)),ci=0;
-  if(!secs.some(function(s){return s.colored}))secs=[{colored:true,title:"الكتاب",nodes:items}];
-  secs.forEach(function(c){
-    var s=document.createElement("section"),inner=document.createElement("div"),h=0;
-    inner.className="in";
-    if(c.colored){h=hueOf(ci);s.className="ch";s.id="c"+ci;s.style.setProperty("--h",h)}else s.className="pre";
-    c.nodes.forEach(function(it){inner.appendChild(it.node)});
-    s.appendChild(inner);book.appendChild(s);
-    if(c.colored){
-      var b=document.createElement("button");b.className="chip";b.style.setProperty("--h",h);
-      b.textContent=(ci+1)+". "+(c.title.length>22?c.title.slice(0,22)+"…":c.title);
-      b.onclick=function(){s.scrollIntoView({behavior:"smooth"})};
-      chips.appendChild(b);ci++;
-    }
-  });
-  el("title").textContent=name;
-  showView("reader");track();
-}
+function render(items,name){loadBook({type:"text",items:items,name:name})}
 function track(){
   var secs=document.querySelectorAll(".ch"),chips=document.querySelectorAll(".chip"),act=0;
   secs.forEach(function(s,i){if(s.getBoundingClientRect().top<=140)act=i});
@@ -228,6 +209,7 @@ el("bigger").onclick=function(){setFs(2)};el("smaller").onclick=function(){setFs
 el("again").onclick=function(){showView("start");el("file").value=""};
 </script>
 <script src="extra.js"></script>
+<script src="split.js"></script>
 <script src="lib.js"></script>
 </body>
 </html>

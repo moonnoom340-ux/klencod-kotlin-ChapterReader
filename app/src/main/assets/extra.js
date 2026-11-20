@@ -55,8 +55,8 @@ window.openPdf=function(f,name){
   f.arrayBuffer().then(function(b){return pdfjsLib.getDocument({data:b,disableFontFace:true,cMapUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/",cMapPacked:true,standardFontDataUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/"}).promise}).then(function(doc){
     var jobs=[];
     for(var i=1;i<=doc.numPages;i++)jobs.push(doc.getPage(i).then(function(p){return p.getTextContent().then(function(tc){return{p:p,x:paras(tc)}})}));
-    return Promise.all(jobs);
-  }).then(function(list){el("err").textContent="";buildPdf(list,name)})
+    return Promise.all(jobs).then(function(list){return outlineOf(doc).then(function(o){return{list:list,outline:o}})});
+  }).then(function(r){el("err").textContent="";loadBook({type:"pdf",list:r.list,outline:r.outline,body:bodySize(r.list),name:name})})
   .catch(function(){el("err").textContent="تعذّر قراءة ملف PDF هذا."});
 };
 function paint(d){
@@ -64,6 +64,32 @@ function paint(d){
   v=p.getViewport({scale:Math.min(w/v0.width*(window.devicePixelRatio||1),2000/v0.width)}),c=document.createElement("canvas");
   c.width=v.width;c.height=v.height;d.insertBefore(c,d.firstChild);
   p.render({canvasContext:c.getContext("2d"),viewport:v});
+}
+window.paintPage=paint;
+async function outlineOf(doc){
+  try{
+    var o=await doc.getOutline();if(!o||!o.length)return[];
+    var flat=[];
+    async function pageOf(it){
+      var d=it.dest;if(!d)return -1;
+      if(typeof d==="string")d=await doc.getDestination(d);
+      if(!d)return -1;
+      var r=d[0];
+      return typeof r==="object"?await doc.getPageIndex(r):(typeof r==="number"?r:-1);
+    }
+    async function walk(arr,depth){
+      for(var i=0;i<arr.length;i++){
+        var it=arr[i],pg=-1;
+        try{pg=await pageOf(it)}catch(x){}
+        if(pg>=0)flat.push({page:pg,title:(it.title||"").trim(),depth:depth});
+        if(depth<1&&it.items&&it.items.length)await walk(it.items,depth+1);
+      }
+    }
+    await walk(o,0);
+    function uniq(a){var seen={},out=[];a.slice().sort(function(x,y){return x.page-y.page}).forEach(function(e){if(!seen[e.page]){seen[e.page]=1;out.push(e)}});return out}
+    var all=uniq(flat),top=uniq(flat.filter(function(e){return e.depth===0}));
+    return all.length<=doc.numPages/3?all:top;
+  }catch(e){return[]}
 }
 function buildPdf(list,name){
   var body=bodySize(list),secs=[];

@@ -22,8 +22,9 @@ function pos(){
 function saveNow(){
   if(!DB||!cur||!cur.ready||!shown())return;
   var p=pos();if(!p)return;
-  try{st("books","readwrite").put({id:cur.id,name:cur.name,at:Date.now(),pos:p,chs:document.querySelectorAll(".ch").length})}catch(e){}
+  try{st("books","readwrite").put({id:cur.id,name:cur.name,at:Date.now(),pos:p,chs:document.querySelectorAll(".ch").length,split:window.BOOK?window.BOOK.split:null})}catch(e){}
 }
+window.saveNow=function(){saveNow()};
 function restore(p){
   var go=function(){
     var secs=document.querySelectorAll("#book>section"),s=secs[Math.min(p.ch,secs.length-1)];if(!s)return;
@@ -39,6 +40,7 @@ function openSaved(m){
     var f=new File([r.blob],m.name,{type:r.blob.type});
     var c=cur={id:m.id,name:m.name,ready:false};
     whenShown(function(){if(c!==cur)return;if(m.pos)restore(m.pos);else c.ready=true});
+    window.__pendingSplit=m.split||null;window.splitReady=Promise.resolve();
     openBook(f);
   }).catch(function(){el("err").textContent="تعذّر فتح الكتاب."});
 }
@@ -126,6 +128,7 @@ el("again").addEventListener("click",function(){saveNow();cur=null;setTimeout(re
 
 /* ---- phone back button ---- */
 window.goBack=function(){
+  if(window.closeSplit&&window.closeSplit())return true;
   var tp=document.getElementById("tp");
   if(tp&&tp.classList.contains("on")){tp.classList.remove("on");return true}
   if(el("reader").style.display==="block"){el("again").click();return true}
@@ -135,13 +138,15 @@ window.goBack=function(){
 
 /* ---- saving a newly picked book ---- */
 el("file").addEventListener("change",function(e){
+  window.splitReady=null;window.__pendingSplit=null;
   var f=e.target.files[0];if(!f||!DB)return;
   var id=f.name+"|"+f.size,c=cur={id:id,name:f.name,ready:false};
   try{st("files","readwrite").put({id:id,blob:f})}catch(x){}
-  rq(st("books","readonly").get(id)).then(function(old){
+  window.splitReady=rq(st("books","readonly").get(id)).then(function(old){
+    window.__pendingSplit=old&&old.split||null;
     var p=old&&old.pos;
     whenShown(function(){if(c!==cur)return;if(p)restore(p);else setTimeout(function(){c.ready=true},800)});
-  });
+  }).catch(function(){});
 });
 addEventListener("scroll",function(){clearTimeout(tmr);tmr=setTimeout(saveNow,700)});
 document.addEventListener("visibilitychange",function(){if(document.hidden)saveNow()});
