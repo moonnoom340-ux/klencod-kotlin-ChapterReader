@@ -1,3 +1,4 @@
+/* © 2026 مهند رضا — جميع الحقوق محفوظة / All rights reserved */
 (function(){
 var W_B=/^\s*(كتاب|المبحث|المطلب|الدرس|المجلس|الحلقة|الجزء|القسم|المسألة|مسألة|الخطبة|الموضوع|سورة|السورة|فائدة|باب|فصل|lesson|part|section|book)(\s+|:|-|$)/i;
 var PLAIN2=/^\s*(المقدمة|مقدمة|تمهيد|الإهداء|إهداء|تقديم|preface|foreword|introduction|dedication|acknowledg(e)?ments)\s*[:\-]?\s*$/i;
@@ -116,7 +117,7 @@ function render(){
   var book=el("book"),chips=el("chips"),n=B.n;
   book.innerHTML="";chips.innerHTML="";window.lastAct=-1;
   if(B.io)B.io.disconnect();
-  if(B.type==="pdf")B.io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!e.target.done){e.target.done=1;window.paintPage(e.target)}})},{rootMargin:"800px"});
+  if(B.type==="pdf")B.io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!e.target.done){e.target.done=1;window.paintPage(e.target);if(window.inkRedraw)window.inkRedraw(e.target)}})},{rootMargin:"800px"});
   var ci=0;
   B.bounds.forEach(function(b,i){
     var e=i+1<B.bounds.length?B.bounds[i+1].s:n,s=document.createElement("section"),h=0,k;
@@ -146,6 +147,7 @@ function render(){
   });
   B.split.marks.forEach(function(m){var x=document.querySelector('#book [data-u="'+m+'"]');if(x)x.classList.add("mk")});
   B.colored=ci;
+  if(window.hlApply)window.hlApply();
 }
 function recompute(keep){
   var a=keep?anchor():null;
@@ -177,7 +179,9 @@ function build(spec,ps){
 window.loadBook=function(spec){
   (window.splitReady||Promise.resolve()).then(function(){
     var ps=window.__pendingSplit;window.__pendingSplit=null;
+    var ph=window.__pendingHl;window.__pendingHl=null;
     B=window.BOOK=build(spec,ps);
+    B.hl=(ph&&ph.ink&&ph.txt)?ph:{ink:{},txt:[]};
     B.bounds=compute();render();status();
     el("title").textContent=spec.name;showView("reader");track();
     syncPanel();

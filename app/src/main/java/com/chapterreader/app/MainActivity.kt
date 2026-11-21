@@ -1,3 +1,4 @@
+// © 2026 مهند رضا — جميع الحقوق محفوظة / All rights reserved
 package com.chapterreader.app
 
 import android.app.Activity

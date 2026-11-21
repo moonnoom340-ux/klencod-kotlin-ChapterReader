@@ -1,3 +1,4 @@
+/* © 2026 مهند رضا — جميع الحقوق محفوظة / All rights reserved */
 (function(){
 var tag=document.createElement("div");
 tag.id="zp";
@@ -27,9 +28,9 @@ function apply(sc){
 }
 function repaint(){
   document.querySelectorAll(".pg").forEach(function(d){
-    if(!d.querySelector("canvas"))return;
+    if(!d.querySelector("canvas:not(.ink)"))return;
     var r=d.getBoundingClientRect();
-    if(r.bottom>-1500&&r.top<innerHeight+1500&&window.paintPage)window.paintPage(d);
+    if(r.bottom>-1500&&r.top<innerHeight+1500&&window.paintPage){window.paintPage(d);if(window.inkRedraw)window.inkRedraw(d)}
     else d.done=0;
   });
 }

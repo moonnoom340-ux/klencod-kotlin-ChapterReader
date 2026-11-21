@@ -1,3 +1,4 @@
+/* © 2026 مهند رضا — جميع الحقوق محفوظة / All rights reserved */
 (function(){
 var DB=null,cur=null,tmr=null,LS=null;
 try{LS=window.localStorage}catch(e){}
@@ -22,7 +23,7 @@ function pos(){
 function saveNow(){
   if(!DB||!cur||!cur.ready||!shown())return;
   var p=pos();if(!p)return;
-  try{st("books","readwrite").put({id:cur.id,name:cur.name,at:Date.now(),pos:p,chs:document.querySelectorAll(".ch").length,split:window.BOOK?window.BOOK.split:null})}catch(e){}
+  try{st("books","readwrite").put({id:cur.id,name:cur.name,at:Date.now(),pos:p,chs:document.querySelectorAll(".ch").length,split:window.BOOK?window.BOOK.split:null,hl:window.BOOK?window.BOOK.hl:null})}catch(e){}
 }
 window.saveNow=function(){saveNow()};
 function restore(p){
@@ -40,7 +41,7 @@ function openSaved(m){
     var f=new File([r.blob],m.name,{type:r.blob.type});
     var c=cur={id:m.id,name:m.name,ready:false};
     whenShown(function(){if(c!==cur)return;if(m.pos)restore(m.pos);else c.ready=true});
-    window.__pendingSplit=m.split||null;window.splitReady=Promise.resolve();
+    window.__pendingSplit=m.split||null;window.splitReady=Promise.resolve();window.__pendingHl=m.hl||null;
     openBook(f);
   }).catch(function(){el("err").textContent="تعذّر فتح الكتاب."});
 }
@@ -132,18 +133,19 @@ window.goBack=function(){
   var tp=document.getElementById("tp");
   if(tp&&tp.classList.contains("on")){tp.classList.remove("on");return true}
   if(el("reader").style.display==="block"){el("again").click();return true}
+  if(el("aboutview").style.display==="block"){showView("setview");return true}
   if(el("libview").style.display==="block"||el("setview").style.display==="block"){showView("start");refresh();return true}
   return false;
 };
 
 /* ---- saving a newly picked book ---- */
 el("file").addEventListener("change",function(e){
-  window.splitReady=null;window.__pendingSplit=null;
+  window.splitReady=null;window.__pendingSplit=null;window.__pendingHl=null;
   var f=e.target.files[0];if(!f||!DB)return;
   var id=f.name+"|"+f.size,c=cur={id:id,name:f.name,ready:false};
   try{st("files","readwrite").put({id:id,blob:f})}catch(x){}
   window.splitReady=rq(st("books","readonly").get(id)).then(function(old){
-    window.__pendingSplit=old&&old.split||null;
+    window.__pendingSplit=old&&old.split||null;window.__pendingHl=old&&old.hl||null;
     var p=old&&old.pos;
     whenShown(function(){if(c!==cur)return;if(p)restore(p);else setTimeout(function(){c.ready=true},800)});
   }).catch(function(){});

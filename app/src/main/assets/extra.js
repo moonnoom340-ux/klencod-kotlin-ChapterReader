@@ -1,3 +1,4 @@
+/* © 2026 مهند رضا — جميع الحقوق محفوظة / All rights reserved */
 (function(){
 var LS=null;try{LS=window.localStorage}catch(e){}
 var URL_="https://api.anthropic.com/v1/messages",MODEL="claude-sonnet-5-5";
@@ -63,7 +64,7 @@ function paint(d){
   var p=d.p,v0=p.getViewport({scale:1}),w=Math.min(d.clientWidth||600,1600),
   v=p.getViewport({scale:Math.min(w/v0.width*(window.devicePixelRatio||1),2000/v0.width)}),c=document.createElement("canvas");
   c.width=v.width;c.height=v.height;
-  p.render({canvasContext:c.getContext("2d"),viewport:v}).promise.then(function(){var o=d.querySelector("canvas");if(o)o.remove();d.insertBefore(c,d.firstChild)});
+  p.render({canvasContext:c.getContext("2d"),viewport:v}).promise.then(function(){var o=d.querySelector("canvas:not(.ink)");if(o)o.remove();d.insertBefore(c,d.firstChild)});
 }
 window.paintPage=paint;
 async function outlineOf(doc){
