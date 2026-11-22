@@ -34,7 +34,8 @@ function restore(p){
   go();setTimeout(go,600);
   var c=cur;setTimeout(function(){if(c)c.ready=true},1500);
 }
-function openSaved(m){
+function openSaved(m,from){
+  window.__from=from||"start";
   showView("start");el("err").textContent="جارٍ فتح الكتاب…";
   rq(st("files","readonly").get(m.id)).then(function(r){
     if(!r){el("err").textContent="تعذّر العثور على ملف الكتاب.";return}
@@ -75,7 +76,7 @@ function card(m,del){
     };
     d.appendChild(x);
   }
-  d.onclick=function(){openSaved(m)};
+  d.onclick=function(){openSaved(m,del?"libview":"start")};
   return d;
 }
 function hero(a){
@@ -132,7 +133,7 @@ window.goBack=function(){
   if(window.closeSplit&&window.closeSplit())return true;
   var tp=document.getElementById("tp");
   if(tp&&tp.classList.contains("on")){tp.classList.remove("on");return true}
-  if(el("reader").style.display==="block"){el("again").click();return true}
+  if(el("reader").style.display==="block"){var to=window.__from==="libview"?"libview":"start";saveNow();cur=null;window.__from="start";showView(to);setTimeout(refresh,300);return true}
   if(el("aboutview").style.display==="block"){showView("setview");return true}
   if(el("hlview")&&el("hlview").style.display==="block"){window.closeHl();return true}
   if(el("libview").style.display==="block"||el("setview").style.display==="block"){showView("start");refresh();return true}
@@ -141,7 +142,7 @@ window.goBack=function(){
 
 /* ---- saving a newly picked book ---- */
 el("file").addEventListener("change",function(e){
-  window.splitReady=null;window.__pendingSplit=null;window.__pendingHl=null;
+  window.splitReady=null;window.__pendingSplit=null;window.__pendingHl=null;window.__from="start";
   var f=e.target.files[0];if(!f||!DB)return;
   var id=f.name+"|"+f.size,c=cur={id:id,name:f.name,ready:false};
   try{st("files","readwrite").put({id:id,blob:f})}catch(x){}
