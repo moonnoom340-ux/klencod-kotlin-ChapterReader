@@ -34,7 +34,7 @@ var TOOLS=[["hand","تمرير"],["hl","تظليل"],["ul","تسطير"],["pen",
 var css=document.createElement("style");
 css.textContent=".pg{position:relative}.ink{position:absolute;inset:0;width:100%;height:100%;mix-blend-mode:multiply;pointer-events:none;z-index:2}"+
 "body.penon .ink{pointer-events:auto;touch-action:none}body.penon.hand .ink{pointer-events:none;touch-action:auto}"+
-"body.penon.pen-text:not(.hand) #book{touch-action:none;-webkit-user-select:none;user-select:none}body.penon #book{padding-bottom:250px}"+
+"body.penon.pen-text:not(.hand) #book,body.penon.pen-text:not(.hand) #book *{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}body.penon #book{padding-bottom:250px}"+
 "#pen{position:fixed;inset:auto 8px calc(8px + env(safe-area-inset-bottom,0px)) 8px;z-index:18;display:none;background:var(--card);border-radius:26px;box-shadow:0 18px 44px -14px rgba(0,0,0,.6);padding:6px 12px 12px}#pen.on{display:block}"+
 "#pen .gp{width:44px;height:5px;border-radius:3px;background:var(--line);margin:2px auto 8px;cursor:pointer}"+
 "#ptools{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}#pen .tl{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;border-radius:14px;font-size:12px;line-height:1.2}#pen .tl svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}"+
@@ -355,6 +355,14 @@ document.addEventListener("pointerdown",function(e){
   try{book.setPointerCapture(e.pointerId)}catch(x){}
   e.preventDefault();preview();
 },true);
+/* belt and braces: stop the page from scrolling while the finger paints on text */
+document.addEventListener("touchstart",function(e){
+  if(!pen||!isText()||tool==="hand"||e.touches.length!==1)return;
+  var t=e.target;
+  if(!t.closest||t.closest("#pen")||t.closest(".sheet")||t.closest("header"))return;
+  if(document.getElementById("book").contains(t)&&e.cancelable)e.preventDefault();
+},{passive:false,capture:true});
+document.addEventListener("touchmove",function(e){if(tp&&e.cancelable)e.preventDefault()},{passive:false,capture:true});
 document.addEventListener("pointermove",function(e){
   if(!tp||!e.isPrimary)return;
   e.preventDefault();tp.x=e.clientX;tp.y=e.clientY;tpUpdate();
