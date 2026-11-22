@@ -36,19 +36,19 @@ function restore(p){
 }
 function openSaved(m,from){
   window.__from=from||"start";
-  showView("start");el("err").textContent="جارٍ فتح الكتاب…";
   rq(st("files","readonly").get(m.id)).then(function(r){
-    if(!r){el("err").textContent="تعذّر العثور على ملف الكتاب.";return}
+    if(!r){fail("تعذّر العثور على ملف الكتاب.");return}
     var f=new File([r.blob],m.name,{type:r.blob.type});
     var c=cur={id:m.id,name:m.name,ready:false};
     whenShown(function(){if(c!==cur)return;if(m.pos)restore(m.pos);else c.ready=true});
     window.__pendingSplit=m.split||null;window.splitReady=Promise.resolve();window.__pendingHl=m.hl||null;
     openBook(f);
-  }).catch(function(){el("err").textContent="تعذّر فتح الكتاب."});
+  }).catch(function(){fail("تعذّر فتح الكتاب.")});
 }
 
 /* ---- UI ---- */
 function hh(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
+function kind(n){var x=(n.split(".").pop()||"").toLowerCase();return x==="pdf"?"PDF":x==="docx"?"Word":"TXT"}
 function ago(t){var d=Math.floor((Date.now()-t)/864e5);return d<1?"اليوم":d<2?"أمس":"قبل "+d+" أيام"}
 function mk(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
 function pct(m){return m.pos?Math.round(m.pos.pct*100):0}
@@ -65,7 +65,7 @@ function card(m,del){
   var d=mk("div","bk"),n=mk("div","n");
   d.style.setProperty("--h",hh(m.name));
   n.appendChild(mk("b","",m.name.replace(/\.[^.]+$/,"")));
-  n.appendChild(mk("small","",(m.pos?"وصلت إلى "+pct(m)+"%":"لم تبدأ بعد")+" · "+ago(m.at)));
+  n.appendChild(mk("small","",(m.pos?"وصلت إلى \u200E"+pct(m)+"%\u200E":"لم تبدأ بعد")+" · "+ago(m.at)+" · "+kind(m.name)));
   n.appendChild(strip(m));d.appendChild(n);
   if(del){
     var x=mk("button","x","حذف");
@@ -90,7 +90,7 @@ function hero(a){
     c.appendChild(mk("small","","متابعة القراءة"));
     c.appendChild(mk("h2","",m.name.replace(/\.[^.]+$/,"")));
     c.appendChild(strip(m));
-    c.appendChild(mk("small","",(m.pos?"وصلت إلى "+pct(m)+"%":"لم تبدأ بعد")+" · "+ago(m.at)));
+    c.appendChild(mk("small","",(m.pos?"وصلت إلى \u200E"+pct(m)+"%\u200E":"لم تبدأ بعد")+" · "+ago(m.at)+" · "+kind(m.name)));
     var b=mk("button","cta","تابع القراءة");b.onclick=function(){openSaved(m)};c.appendChild(b);
   }
   h.appendChild(c);

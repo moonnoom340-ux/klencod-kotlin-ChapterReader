@@ -131,7 +131,16 @@ var PLAIN=/^\s*(الفهرس|فهرس|المراجع|المصادر|قائمة �
 var el=function(id){return document.getElementById(id)};
 var fs=19;
 var VIEWS=["start","libview","setview","aboutview","hlview","reader"];
-function showView(n){VIEWS.forEach(function(v){el(v).style.display=v===n?"block":"none"});document.body.classList.toggle("rd",n==="reader");window.scrollTo(0,0);if(n!=="reader"&&window.closeAllPanels)window.closeAllPanels()}
+(function(){
+  var st=document.createElement("style");
+  st.textContent="#ld{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(10,14,30,.45);backdrop-filter:blur(3px)}#ld.on{display:flex}#ld .b{background:var(--card);color:var(--ink);border-radius:22px;padding:20px 26px;display:flex;align-items:center;gap:14px;font-weight:700;box-shadow:0 18px 44px -14px rgba(0,0,0,.55)}#ld i{width:26px;height:26px;border-radius:50%;border:3px solid var(--line);border-top-color:#4f46e5;animation:ldr .8s linear infinite}@keyframes ldr{to{transform:rotate(360deg)}}";
+  document.head.appendChild(st);
+  var d=document.createElement("div");d.id="ld";d.innerHTML='<div class="b"><i></i><span id="ldt"></span></div>';document.body.appendChild(d);
+  var t=0;
+  window.loading=function(on,msg){clearTimeout(t);if(on){document.getElementById("ldt").textContent=msg||"جارٍ التحميل…";d.classList.add("on");t=setTimeout(function(){d.classList.remove("on")},90000)}else d.classList.remove("on")};
+})();
+function fail(msg){loading(false);showView("start");el("err").textContent=msg}
+function showView(n){if(n==="reader")loading(false);VIEWS.forEach(function(v){el(v).style.display=v===n?"block":"none"});document.body.classList.toggle("rd",n==="reader");window.scrollTo(0,0);if(n!=="reader"&&window.closeAllPanels)window.closeAllPanels()}
 function hueOf(i){return Math.round((210+i*137.508)%360)}
 function kindOf(t){t=(t||"").trim();if(!t||t.length>=80)return null;if(/\.{3,}|…|·{3,}/.test(t))return null;if(PLAIN.test(t))return"plain";if(CH.test(t)&&!EXC.test(t))return"ch";return null}
 
@@ -192,18 +201,18 @@ var pend=false;
 addEventListener("scroll",function(){if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;if(el("reader").style.display==="block")track()})});
 
 function openBook(f){
-  el("err").textContent="";
+  el("err").textContent="";loading(true,"جارٍ فتح الكتاب…");
   var n=f.name.replace(/\.[^.]+$/,""),ext=(f.name.split(".").pop()||"").toLowerCase();
   if(ext==="docx"){
-    if(!window.mammoth){el("err").textContent="تعذّر تحميل قارئ Word. تحقق من الاتصال وأعد المحاولة.";return}
+    if(!window.mammoth){fail("تعذّر تحميل قارئ Word. تحقق من الاتصال وأعد المحاولة.");return}
     f.arrayBuffer().then(function(b){return mammoth.convertToHtml({arrayBuffer:b})})
      .then(function(r){render(fromHtml(r.value),n)})
-     .catch(function(){el("err").textContent="تعذّر قراءة ملف Word هذا."});
+     .catch(function(){fail("تعذّر قراءة ملف Word هذا.")});
   }else if(ext==="txt"||ext==="md"){
-    f.text().then(function(t){render(fromText(t),n)});
+    f.text().then(function(t){render(fromText(t),n)}).catch(function(){fail("تعذّر قراءة هذا الملف.")});
   }else if(ext==="pdf"){
     window.openPdf(f,n);
-  }else{el("err").textContent="هذه الصيغة غير مدعومة بعد."}
+  }else{fail("هذه الصيغة غير مدعومة بعد.")}
 }
 el("file").onchange=function(e){var f=e.target.files[0];if(f)openBook(f)};
 function setFs(d){fs=Math.max(14,Math.min(34,fs+d));document.documentElement.style.setProperty("--fs",fs+"px")}

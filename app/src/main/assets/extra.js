@@ -52,13 +52,12 @@ function head(x,body,strict){
 window.openPdf=function(f,name){
   if(!window.pdfjsLib){el("err").textContent="ملفات مكتبة PDF غير موجودة في مجلد assets.";return}
   pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  el("err").textContent="جارٍ قراءة الملف…";
   f.arrayBuffer().then(function(b){return pdfjsLib.getDocument({data:b,disableFontFace:true,cMapUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/",cMapPacked:true,standardFontDataUrl:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/"}).promise}).then(function(doc){
     var jobs=[];
     for(var i=1;i<=doc.numPages;i++)jobs.push(doc.getPage(i).then(function(p){return p.getTextContent().then(function(tc){return{p:p,x:paras(tc)}})}));
     return Promise.all(jobs).then(function(list){return outlineOf(doc).then(function(o){return{list:list,outline:o}})});
   }).then(function(r){el("err").textContent="";loadBook({type:"pdf",list:r.list,outline:r.outline,body:bodySize(r.list),name:name})})
-  .catch(function(){el("err").textContent="تعذّر قراءة ملف PDF هذا."});
+  .catch(function(){fail("تعذّر قراءة ملف PDF هذا.")});
 };
 function paint(d){
   var p=d.p,v0=p.getViewport({scale:1}),w=Math.min(d.clientWidth||600,1600),
