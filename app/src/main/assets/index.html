@@ -115,6 +115,7 @@ button:focus-visible,.chip:focus-visible{outline:2px solid var(--ink);outline-of
   <p class="muted">قارئ الفصول · كل فصل بلون</p>
 </div>
 <div class="view" id="aboutview"></div>
+<div class="view" id="hlview"></div>
 <div id="reader">
   <header>
     <div class="row"><button class="ib" id="again" aria-label="الرئيسية"><svg viewBox="0 0 24 24"><path d="M3.5 11.5 12 4l8.5 7.5M5.5 10v9.5h13V10"/></svg></button><span class="t" id="title"></span></div>
@@ -129,8 +130,8 @@ var EXC=/^\s*(الفصل|الباب)\s+(التالي|السابق|القادم|�
 var PLAIN=/^\s*(الفهرس|فهرس|المراجع|المصادر|قائمة المصادر|الخاتمة|خاتمة|الملاحق|ملحق|contents|table of contents|index|bibliography|references|appendix|epilogue)\s*[:\-]?\s*$/i;
 var el=function(id){return document.getElementById(id)};
 var fs=19;
-var VIEWS=["start","libview","setview","aboutview","reader"];
-function showView(n){VIEWS.forEach(function(v){el(v).style.display=v===n?"block":"none"});window.scrollTo(0,0);if(n!=="reader"&&window.closeAllPanels)window.closeAllPanels()}
+var VIEWS=["start","libview","setview","aboutview","hlview","reader"];
+function showView(n){VIEWS.forEach(function(v){el(v).style.display=v===n?"block":"none"});document.body.classList.toggle("rd",n==="reader");window.scrollTo(0,0);if(n!=="reader"&&window.closeAllPanels)window.closeAllPanels()}
 function hueOf(i){return Math.round((210+i*137.508)%360)}
 function kindOf(t){t=(t||"").trim();if(!t||t.length>=80)return null;if(/\.{3,}|…|·{3,}/.test(t))return null;if(PLAIN.test(t))return"plain";if(CH.test(t)&&!EXC.test(t))return"ch";return null}
 

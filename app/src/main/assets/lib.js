@@ -134,6 +134,7 @@ window.goBack=function(){
   if(tp&&tp.classList.contains("on")){tp.classList.remove("on");return true}
   if(el("reader").style.display==="block"){el("again").click();return true}
   if(el("aboutview").style.display==="block"){showView("setview");return true}
+  if(el("hlview")&&el("hlview").style.display==="block"){window.closeHl();return true}
   if(el("libview").style.display==="block"||el("setview").style.display==="block"){showView("start");refresh();return true}
   return false;
 };
